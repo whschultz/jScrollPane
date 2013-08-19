@@ -63,6 +63,30 @@
 
 	$.fn.jScrollPane = function(settings)
 	{
+		var outerEventDiv = document.getElementById("jScrollPane_outerEventDiv");
+
+		if (outerEventDiv == null) {
+			outerEventDiv = document.createElement('div');
+			$(outerEventDiv).css({
+				top		: 0,
+				left	: 0,
+				width	: "100%",
+				height	: "100%",
+				display	: "none",
+				zIndex	: 0x7fffffff,
+				// The color and opacity are necessary for IE.  Without this, events
+				// will trickle through.  Also, there's the fun detail that if you
+				// set the opacity higher and change the color, you can see the div
+				// when it comes to the foreground.
+				backgroundColor: "white",
+				opacity	: .001,
+				position: "absolute"
+			});
+			outerEventDiv.id = "jScrollPane_outerEventDiv";
+
+			$(document.body).append(outerEventDiv);
+		}
+
 		// JScrollPane "class" - public methods are available through $('selector').data('jsp')
 		function JScrollPane(elem, s)
 		{
@@ -312,13 +336,13 @@
 
 							var startY = e.pageY - verticalDrag.position().top;
 
-							$('html').bind(
+							$('#jScrollPane_outerEventDiv').bind(
 								'mousemove.jsp',
 								function(e)
 								{
 									positionDragY(e.pageY - startY, false);
 								}
-							).bind('mouseup.jsp mouseleave.jsp', cancelDrag);
+							).bind('mouseup.jsp mouseleave.jsp', cancelDrag).show();
 							return false;
 						}
 					);
@@ -400,13 +424,13 @@
 
 							var startX = e.pageX - horizontalDrag.position().left;
 
-							$('html').bind(
+							$('#jScrollPane_outerEventDiv').bind(
 								'mousemove.jsp',
 								function(e)
 								{
 									positionDragX(e.pageX - startX, false);
 								}
-							).bind('mouseup.jsp mouseleave.jsp', cancelDrag);
+							).bind('mouseup.jsp mouseleave.jsp', cancelDrag).show();
 							return false;
 						}
 					);
@@ -533,7 +557,7 @@
 				doScroll();
 
 				eve = ele ? 'mouseout.jsp' : 'mouseup.jsp';
-				ele = ele || $('html');
+				ele = ele || $('#jScrollPane_outerEventDiv').show();
 				ele.bind(
 					eve,
 					function()
@@ -542,6 +566,12 @@
 						scrollTimeout && clearTimeout(scrollTimeout);
 						scrollTimeout = null;
 						ele.unbind(eve);
+						$('#jScrollPane_outerEventDiv').hide();
+						ele = null;
+						eve = null;
+						arrow = null;
+						dirX = null;
+						dirY = null;
 					}
 				);
 			}
@@ -662,7 +692,9 @@
 
 			function cancelDrag()
 			{
-				$('html').unbind('dragstart.jsp selectstart.jsp mousemove.jsp mouseup.jsp mouseleave.jsp');
+				$('html').unbind('dragstart.jsp selectstart.jsp');
+				$('#jScrollPane_outerEventDiv').unbind('mousemove.jsp mouseup.jsp mouseleave.jsp');
+				$('#jScrollPane_outerEventDiv').hide();
 
 				if (verticalDrag) {
 					verticalDrag.removeClass('jspActive');
